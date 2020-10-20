@@ -87,11 +87,14 @@ public class CosmosDAL {
 		return true;
 	}
 	
-	public Mono<ApiResponse> create(JsonNode data) {
+	public Mono<JsonNode> create(JsonNode data) {
 		Mono<CosmosItemResponse<JsonNode>> itemResponse = container.createItem(data);
 		return itemResponse.flatMap(ir -> {
 			GenericHelper.logDiagnosticsRUcharges(LOGGER, ir);
-			return Mono.just(new ApiResponse(201, "Item Created"));
+			return Mono.just(ir.getItem());
+		}).onErrorResume(e -> {	
+			GenericHelper.logError(e, LOGGER);
+			return Mono.just(GenericHelper.getErrorJson(e, 400));
 		});
 	}
 	
@@ -103,6 +106,9 @@ public class CosmosDAL {
 		return itemResponse.flatMap(ir -> {
 			GenericHelper.logDiagnosticsRUcharges(LOGGER, ir);
 			return Mono.just(ir.getItem());
+		}).onErrorResume(e -> {	
+			GenericHelper.logError(e, LOGGER);
+			return Mono.just(GenericHelper.getErrorJson(e, 400));
 		});
 	}
 	
@@ -130,11 +136,14 @@ public class CosmosDAL {
 		return null;
 	}
 	
-	public Mono<ApiResponse> update(JsonNode data) {
+	public Mono<JsonNode> update(JsonNode data) {
 		Mono<CosmosItemResponse<JsonNode>> itemResponse = container.upsertItem(data);
 		return itemResponse.flatMap(ir -> {
 			GenericHelper.logDiagnosticsRUcharges(LOGGER, ir);
-			return Mono.just(new ApiResponse(201, "Item Updated"));
+			return Mono.just(ir.getItem());
+		}).onErrorResume(e -> {	
+			GenericHelper.logError(e, LOGGER);
+			return Mono.just(GenericHelper.getErrorJson(e, 400));
 		});
 	}
 	

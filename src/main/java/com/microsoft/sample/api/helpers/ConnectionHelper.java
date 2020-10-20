@@ -11,6 +11,7 @@ public class ConnectionHelper {
 		
 		DirectConnectionConfig config = DirectConnectionConfig.getDefaultConfig();
 		
+		
 		/* 
 		 * Sets the connect timeout for direct client,
 		 * represents timeout for establishing connections with an endpoint. 

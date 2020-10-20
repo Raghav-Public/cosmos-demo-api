@@ -37,7 +37,7 @@ public class APIController {
 	
 	
 	@PostMapping(path = "/v1/items", consumes = "application/json", produces = "application/json")
-	public Mono<ApiResponse> create(@RequestBody JsonNode data) {
+	public Mono<JsonNode> create(@RequestBody JsonNode data) {
 		return cosmosDAL.create(data);
 	}
 	
@@ -45,7 +45,7 @@ public class APIController {
 	public Mono<JsonNode> retrieve(
 						@PathVariable(value = "id") String id,
 						@PathVariable(value = "pk") String pk) {
-		return cosmosDAL.retrieve(id, pk);
+		return cosmosDAL.retrieve(id, pk).onErrorReturn(null);
 	}
 	
 	//?filters={"attributeName1":"attributeValue1", "attributeName2":"attributeValue2"}
@@ -57,7 +57,7 @@ public class APIController {
 	
 	
 	@PutMapping(path = "/v1/items", consumes = "application/json", produces = "application/json")
-	public Mono<ApiResponse> update(@RequestBody JsonNode data) {
+	public Mono<JsonNode> update(@RequestBody JsonNode data) {
 		return cosmosDAL.update(data);
 	}
 	

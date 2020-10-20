@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import org.apache.commons.text.StringEscapeUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,7 +35,10 @@ public class GenericHelper {
 		// This is used to identify the current compute unit. can be a predetermined value 
 		return currentComputeIdentifier;
 	}
-	
+	public static void logError(Throwable e, Logger logger) {
+		logger.error(e.getMessage());
+		logger.error(e.getStackTrace().toString());
+	}
 	public static void logDiagnosticsRUcharges(Logger logger, CosmosItemResponse<JsonNode> itemResponse) {
 		logger.info("Activity Id: " + itemResponse.getActivityId());
 		logger.info("Diagnostics: " + itemResponse.getDiagnostics().toString());
@@ -49,11 +53,11 @@ public class GenericHelper {
 		logger.info("RU Charges: " + feedResponse.getRequestCharge());
 		logger.info("Session Token: " + feedResponse.getSessionToken());
 	}
-	public static JsonNode getErrorJson(Exception exp, int statusCode) {
+	public static JsonNode getErrorJson(Throwable error, int statusCode) {
 		ObjectMapper objectMapper = new ObjectMapper();
 		JsonNode node = null;
 		try {
-			node = objectMapper.readTree("{ \"status\":" + statusCode + ", \"message\":" + exp.getMessage() + "}");
+			node = objectMapper.readTree("{\"status\":" + statusCode + ", \"message\":\"" + StringEscapeUtils.escapeJava(error.getMessage()) + "\"}");
 	
 		} catch (JsonMappingException e) {
 			// TODO Auto-generated catch block

@@ -11,6 +11,7 @@ import org.apache.commons.text.StringEscapeUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.azure.cosmos.CosmosException;
 import com.azure.cosmos.models.CosmosItemResponse;
 import com.azure.cosmos.models.CosmosQueryRequestOptions;
 import com.azure.cosmos.models.FeedResponse;
@@ -21,7 +22,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.microsoft.sample.api.dal.CosmosDAL;
+import com.microsoft.sample.api.dal.CosmosAsyncDAL;
 
 import ch.qos.logback.classic.db.SQLBuilder;
 
@@ -39,25 +40,41 @@ public class GenericHelper {
 		logger.error(e.getMessage());
 		logger.error(e.getStackTrace().toString());
 	}
-	public static void logDiagnosticsRUcharges(Logger logger, CosmosItemResponse<JsonNode> itemResponse) {
+	public static void logDiagnostics(Logger logger, CosmosItemResponse<JsonNode> itemResponse) {
 		logger.info("Activity Id: " + itemResponse.getActivityId());
 		logger.info("Diagnostics: " + itemResponse.getDiagnostics().toString());
 		logger.info("RU Charges: " + itemResponse.getRequestCharge());
 		logger.info("Session Token: " + itemResponse.getSessionToken());
 		logger.info("End-To-End Request Latency: " + itemResponse.getDuration());
 	}
-	
-	public static void logDiagnosticsRUcharges(Logger logger, FeedResponse<JsonNode> feedResponse) {
+	public static void logDiagnostics(Logger logger, FeedResponse<JsonNode> feedResponse) {
 		logger.info("Activity Id: " + feedResponse.getActivityId());
 		logger.info("Diagnostics: " + feedResponse.getCosmosDiagnostics().toString());
 		logger.info("RU Charges: " + feedResponse.getRequestCharge());
 		logger.info("Session Token: " + feedResponse.getSessionToken());
 	}
-	public static JsonNode getErrorJson(Throwable error, int statusCode) {
+	public static void logDiagnostics(Logger logger, CosmosException exceptionResponse) {
+		logger.info("Activity Id: " + exceptionResponse.getActivityId());
+		logger.info("Diagnostics: " + exceptionResponse.getDiagnostics().toString());
+		logger.info("Status Code: " + exceptionResponse.getStatusCode());
+		logger.info("Sub Status Code: " + exceptionResponse.getSubStatusCode());
+		logger.info("Retry After: " + exceptionResponse.getRetryAfterDuration());
+	}
+	public static JsonNode getErrorJson(Object error, int statusCode) {
+		String strError = "";
 		ObjectMapper objectMapper = new ObjectMapper();
 		JsonNode node = null;
 		try {
-			node = objectMapper.readTree("{\"status\":" + statusCode + ", \"message\":\"" + StringEscapeUtils.escapeJava(error.getMessage()) + "\"}");
+			if(error instanceof Throwable) {
+				Throwable t = (Throwable)error;
+				strError = StringEscapeUtils.escapeJava(t.getMessage());
+			}
+			else {
+				Exception e = (Exception)error;
+				strError = StringEscapeUtils.escapeJava(e.getMessage());
+			}
+			String errorJson = "{\"status\":" + statusCode + ", \"message\":\"" + strError + "\"}";
+			node = objectMapper.readTree(errorJson);
 	
 		} catch (JsonMappingException e) {
 			// TODO Auto-generated catch block
@@ -108,5 +125,14 @@ public class GenericHelper {
 		sqlQuerySpec.setQueryText(queryText);
 		sqlQuerySpec.setParameters(sqlParameters);
 		return sqlQuerySpec;
+	}
+	public static JsonNode handleException(Exception exp, Logger logger) {
+		if(exp instanceof CosmosException) {
+			CosmosException cosmosException = (CosmosException) exp;
+			GenericHelper.logDiagnostics(logger, cosmosException);
+			return GenericHelper.getErrorJson(cosmosException, cosmosException.getStatusCode());
+		}
+		logError(exp, logger);
+		return getErrorJson(exp, 500);
 	}
 }

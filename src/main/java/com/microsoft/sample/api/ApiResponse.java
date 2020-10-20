@@ -1,28 +1,14 @@
 package com.microsoft.sample.api;
 
+import com.fasterxml.jackson.databind.JsonNode;
+
 public class ApiResponse {
 	
-	private int statusCode;
-	private String message;
+	private JsonNode data;
+	private String etag;
+	private String sessionToken;
 	
-	public ApiResponse(int s, String m) {
-		statusCode = s;
-		message = m;
-	}
-
-	public int getStatusCode() {
-		return statusCode;
-	}
-
-	public void setStatusCode(int statusCode) {
-		this.statusCode = statusCode;
-	}
-
-	public String getMessage() {
-		return message;
-	}
-
-	public void setMessage(String message) {
-		this.message = message;
+	public ApiResponse(JsonNode node) {
+		
 	}
 }

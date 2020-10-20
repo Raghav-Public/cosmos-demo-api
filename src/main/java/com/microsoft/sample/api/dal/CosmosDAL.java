@@ -1,5 +1,7 @@
 package com.microsoft.sample.api.dal;
 
+import java.util.List;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -13,6 +15,7 @@ import com.azure.cosmos.implementation.ConflictException;
 import com.azure.cosmos.models.CosmosItemResponse;
 import com.azure.cosmos.models.CosmosQueryRequestOptions;
 import com.azure.cosmos.models.PartitionKey;
+import com.azure.cosmos.models.SqlQuerySpec;
 import com.azure.cosmos.util.CosmosPagedFlux;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
@@ -21,6 +24,7 @@ import com.microsoft.sample.api.ApiResponse;
 import com.microsoft.sample.api.helpers.ConnectionHelper;
 import com.microsoft.sample.api.helpers.GenericHelper;
 
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 public class CosmosDAL {
@@ -59,6 +63,7 @@ public class CosmosDAL {
 			 * Session consistency is used, adjust the same accordingly
 			 * TODO: add all the different initialization options
 			 */
+			LOGGER.info("Compute ID:" + GenericHelper.getCurrentComputeIdentifier());
 			client = new CosmosClientBuilder()
 	        		.endpoint(host)
 	        		.key(key)
@@ -104,14 +109,26 @@ public class CosmosDAL {
 	/*
 	 * Query option
 	 */
-	/*public void query(String query) {
+	public Flux<List<JsonNode>> query(String filters) {
+		
 		CosmosQueryRequestOptions queryOptions = new CosmosQueryRequestOptions();
+		
 		queryOptions.setQueryMetricsEnabled(true);
-		
-		CosmosPagedFlux<JsonNode> itemPages = container.queryItems(query, queryOptions, JsonNode.class);
-		itemPages.fl
-		
-	}*/
+		try {
+			SqlQuerySpec sqlQuerySpec = GenericHelper.getSqlQueryFromQueryString(filters, LOGGER);
+			LOGGER.info(sqlQuerySpec.getQueryText());
+			CosmosPagedFlux<JsonNode> itemPages = container.queryItems(sqlQuerySpec, queryOptions, JsonNode.class);
+			
+			return itemPages.byPage().flatMap(ip-> {
+				
+				return Flux.just(ip.getResults());
+			});
+		}
+		catch(Exception exp) {
+			System.out.println(exp.getMessage());
+		}
+		return null;
+	}
 	
 	public Mono<ApiResponse> update(JsonNode data) {
 		Mono<CosmosItemResponse<JsonNode>> itemResponse = container.upsertItem(data);
@@ -121,5 +138,13 @@ public class CosmosDAL {
 		});
 	}
 	
+	public Mono<Object> delete(String partitionKey, String itemId) {
+		System.out.println(partitionKey);
+		Mono<CosmosItemResponse<Object>> itemResponse = container.deleteItem(itemId, new PartitionKey(partitionKey));
+		return itemResponse.flatMap(ir -> {
+			//GenericHelper.logDiagnosticsRUcharges(LOGGER, ir);
+			return Mono.empty();
+		});
+	}
 	
 }

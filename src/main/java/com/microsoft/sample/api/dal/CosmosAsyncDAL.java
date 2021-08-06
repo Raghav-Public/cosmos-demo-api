@@ -10,8 +10,10 @@ import com.azure.cosmos.CosmosAsyncClient;
 import com.azure.cosmos.CosmosAsyncContainer;
 import com.azure.cosmos.CosmosAsyncDatabase;
 import com.azure.cosmos.CosmosClientBuilder;
+import com.azure.cosmos.CosmosDiagnostics;
 import com.azure.cosmos.CosmosException;
 import com.azure.cosmos.implementation.ConflictException;
+import com.azure.cosmos.models.CosmosContainerResponse;
 import com.azure.cosmos.models.CosmosItemResponse;
 import com.azure.cosmos.models.CosmosQueryRequestOptions;
 import com.azure.cosmos.models.PartitionKey;
@@ -67,7 +69,7 @@ public class CosmosAsyncDAL {
 	        		.endpoint(host)
 	        		.key(key)
 	        		.directMode(ConnectionHelper.getDirectModeConfig())
-	        		.gatewayMode(ConnectionHelper.getGatewayConfig())
+	        		//.gatewayMode(ConnectionHelper.getGatewayConfig())
 	        		.consistencyLevel(ConsistencyLevel.SESSION)
 	        		.userAgentSuffix(GenericHelper.getCurrentComputeIdentifier())
 	        		.buildAsyncClient();
@@ -78,6 +80,9 @@ public class CosmosAsyncDAL {
 			
 			// assuming container was created using portal or cli
 			container = database.getContainer(containerName);
+			Mono<CosmosContainerResponse> containerResponseMono = container.read();
+			CosmosContainerResponse containerResponse = containerResponseMono.block();
+			long progress = containerResponse.getIndexTransformationProgress();
 		}
 		catch(Exception exp) {
 			LOGGER.error(exp.getMessage());
@@ -100,15 +105,17 @@ public class CosmosAsyncDAL {
 	/*
 	 * Point Read
 	 */
-	public Mono<JsonNode> retrieve(String id, String pk) {
-		Mono<CosmosItemResponse<JsonNode>> itemResponse = container.readItem(id, new PartitionKey(pk), JsonNode.class);
-		return itemResponse.flatMap(ir -> {
-			GenericHelper.logDiagnostics(LOGGER, ir);
-			return Mono.just(ir.getItem());
-		}).onErrorResume(e -> {	
-			GenericHelper.logError(e, LOGGER);
-			return Mono.just(GenericHelper.getErrorJson(e, 400));
-		});
+	public JsonNode retrieve(String id, String pk) {
+		
+		LOGGER.info("id:" + id + " pk:" + pk);
+		Mono<CosmosItemResponse<JsonNode>> itemResponseMono = container.readItem(id, new PartitionKey(pk), JsonNode.class);
+		
+		CosmosItemResponse<JsonNode> itemResponse = itemResponseMono.block();
+		CosmosDiagnostics diagnostics = itemResponse.getDiagnostics();
+		
+		LOGGER.info(diagnostics.toString());
+		
+		return itemResponse.getItem();
 	}
 	
 	/*
@@ -121,11 +128,11 @@ public class CosmosAsyncDAL {
 		queryOptions.setQueryMetricsEnabled(true);
 		try {
 			SqlQuerySpec sqlQuerySpec = GenericHelper.getSqlQueryFromQueryString(filters, LOGGER);
-			LOGGER.info(sqlQuerySpec.getQueryText());
+			//LOGGER.info(sqlQuerySpec.getQueryText());
 			CosmosPagedFlux<JsonNode> itemPages = container.queryItems(sqlQuerySpec, queryOptions, JsonNode.class);
 			
 			return itemPages.byPage().flatMap(ip-> {
-				
+				LOGGER.info(ip.getCosmosDiagnostics().toString());
 				return Flux.just(ip.getResults());
 			});
 		}

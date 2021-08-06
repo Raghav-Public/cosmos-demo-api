@@ -28,10 +28,10 @@ import org.slf4j.LoggerFactory;
 public class AsyncApiController {
 	
 	private static Logger LOGGER = LoggerFactory.getLogger(AsyncApiController.class);
-	private static String host = "https://rdsqlapi.documents.azure.com:443/";
-	private static String key = "stEvrfA9Dmjbdv3a0C6AJsB9PbjJpUXzreMmf21Ru42NJuW8zSvUap4fZ85sg2ApTBtg6wQsXcrMR7vkFB585A==";
-	private static String databaseName = "testdb";
-	private static String containerName = "storeItems";
+	private static String host = "https://rdcosmos.documents.azure.com:443/";
+	private static String key = "fvlHanr6UxkLlVbQucsh65VSqvuzh6oj0PhMJerSRacy3gnwMXdo562tmBzvUHlOg3EPmkfoaSCKEkN8XUWVtg==";
+	private static String databaseName = "mydb";
+	private static String containerName = "mycontainer";
 	
 	CosmosAsyncDAL cosmosAsyncDAL = CosmosAsyncDAL.getInstance(host, key, databaseName, containerName);
 	
@@ -42,10 +42,11 @@ public class AsyncApiController {
 		return cosmosAsyncDAL.create(data);
 	}
 	@GetMapping(path = "/async/v1/items/{pk}/{id}", produces = "application/json")
-	public Mono<JsonNode> retrieve(
+	public JsonNode retrieve(
 						@PathVariable(value = "id") String id,
 						@PathVariable(value = "pk") String pk) {
-		return cosmosAsyncDAL.retrieve(id, pk).onErrorReturn(null);
+		LOGGER.info("Point Query");
+		return cosmosAsyncDAL.retrieve(id, pk);
 	}
 	
 	//?filters={"attributeName1":"attributeValue1", "attributeName2":"attributeValue2"}

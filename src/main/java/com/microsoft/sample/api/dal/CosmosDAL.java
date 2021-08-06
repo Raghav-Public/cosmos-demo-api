@@ -65,7 +65,7 @@ public class CosmosDAL {
 	        		.endpoint(host)
 	        		.key(key)
 	        		.directMode(ConnectionHelper.getDirectModeConfig())
-	        		.gatewayMode(ConnectionHelper.getGatewayConfig())
+	        		//.gatewayMode(ConnectionHelper.getGatewayConfig())
 	        		.consistencyLevel(ConsistencyLevel.SESSION)
 	        		.userAgentSuffix(GenericHelper.getCurrentComputeIdentifier())
 	        		.buildClient();
@@ -102,6 +102,7 @@ public class CosmosDAL {
 		try {
 			CosmosItemResponse<JsonNode> itemResponse = container.readItem(id, new PartitionKey(pk), JsonNode.class);
 			GenericHelper.logDiagnostics(LOGGER, itemResponse);
+			//LOGGER.info(itemResponse.getC);
 			return itemResponse.getItem();
 		}
 		catch(Exception exp) {

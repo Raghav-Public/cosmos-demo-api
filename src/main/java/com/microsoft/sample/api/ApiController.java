@@ -25,10 +25,10 @@ import reactor.core.publisher.Mono;
 public class ApiController {
 	
 	private static Logger LOGGER = LoggerFactory.getLogger(ApiController.class);
-	private static String host = "https://rdsqlapi.documents.azure.com:443/";
-	private static String key = "stEvrfA9Dmjbdv3a0C6AJsB9PbjJpUXzreMmf21Ru42NJuW8zSvUap4fZ85sg2ApTBtg6wQsXcrMR7vkFB585A==";
-	private static String databaseName = "testdb";
-	private static String containerName = "storeItems";
+	private static String host = "https://rdcosmos.documents.azure.com:443/";
+	private static String key = "fvlHanr6UxkLlVbQucsh65VSqvuzh6oj0PhMJerSRacy3gnwMXdo562tmBzvUHlOg3EPmkfoaSCKEkN8XUWVtg==";
+	private static String databaseName = "mydb";
+	private static String containerName = "mycontainer";
 	
 	CosmosDAL cosmosDAL = CosmosDAL.getInstance(host, key, databaseName, containerName);
 	
